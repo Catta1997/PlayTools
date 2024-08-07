@@ -2,16 +2,16 @@
 //  BatteryLevel.m
 //  PlayTools
 //
-//  Created by Edoardo Cattarin on 07/08/24.
+//  Created by Edoardo C on 07/08/24.
 //
 
 #import <Foundation/Foundation.h>
 #import <objc/runtime.h>
 #import <PlayTools/PlayTools-Swift.h>
-#import "UIKit/UIKit.h"
 #import "BatteryLevel.h"
+
 __attribute__((visibility("hidden")))
-@interface PTSwizzleLoader : NSObject
+@interface BatteryLevelLoader : NSObject
 @end
 
 @implementation NSObject (Swizzle)
@@ -47,18 +47,9 @@ __attribute__((visibility("hidden")))
     }
 }
 
-- (void) swizzleExchangeMethod:(SEL)origSelector withMethod:(SEL)newSelector
-{
-    Class cls = [self class];
-    // If current class doesn't exist selector, then get super
-    Method originalMethod = class_getInstanceMethod(cls, origSelector);
-    Method swizzledMethod = class_getInstanceMethod(cls, newSelector);
-    
-    method_exchangeImplementations(originalMethod, swizzledMethod);
-}
 
 @end
-@implementation PTSwizzleLoader
+@implementation BatteryLevelLoader
 
 - (bool) pm_return_true {
     return true;
