@@ -47,10 +47,6 @@ __attribute__((visibility("hidden")))
     }
 }
 
-
-@end
-@implementation BatteryLevelLoader
-
 - (bool) pm_return_true {
     return true;
 }
@@ -62,7 +58,9 @@ __attribute__((visibility("hidden")))
 - (UIDeviceBatteryState) pm_return_fullCharging {
     return UIDeviceBatteryStateFull;
 }
+@end
 
+@implementation BatteryLevelLoader
 + (void)load {
     [[UIDevice currentDevice] setBatteryMonitoringEnabled:YES];
     [objc_getClass("UIDevice") swizzleInstanceMethod:@selector(isBatteryMonitoringEnabled) withMethod:@selector(pm_return_true)];
