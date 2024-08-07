@@ -2,7 +2,7 @@
 //  BatteryLevel.m
 //  PlayTools
 //
-//  Created by Edoardo C on 07/08/24.
+//  Created by Edoardo C. on 07/08/24.
 //
 
 #import <Foundation/Foundation.h>
@@ -59,13 +59,14 @@ __attribute__((visibility("hidden")))
     return 1.0;
 }
 
-- (UIDeviceBatteryState) pm_return_charging {
+- (UIDeviceBatteryState) pm_return_fullCharging {
     return UIDeviceBatteryStateFull;
 }
 
 + (void)load {
     [[UIDevice currentDevice] setBatteryMonitoringEnabled:YES];
     [objc_getClass("UIDevice") swizzleInstanceMethod:@selector(isBatteryMonitoringEnabled) withMethod:@selector(pm_return_true)];
-    [objc_getClass("UIDevice") swizzleInstanceMethod:@selector(batteryState) withMethod:@selector(pm_return_charging)];
-    [objc_getClass("UIDevice") swizzleInstanceMethod:@selector(batteryLevel) withMethod:@selector(pm_return_battery_full)];}
+    [objc_getClass("UIDevice") swizzleInstanceMethod:@selector(batteryState) withMethod:@selector(pm_return_fullCharging)];
+    [objc_getClass("UIDevice") swizzleInstanceMethod:@selector(batteryLevel) withMethod:@selector(pm_return_battery_full)];
+}
 @end
