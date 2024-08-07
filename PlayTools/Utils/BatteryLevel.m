@@ -14,7 +14,7 @@ __attribute__((visibility("hidden")))
 @interface BatteryLevelLoader : NSObject
 @end
 
-@implementation NSObject (Swizzle)
+@implementation NSObject (SwizzleBattery)
 
 - (void) swizzleInstanceMethod:(SEL)origSelector withMethod:(SEL)newSelector
 {
