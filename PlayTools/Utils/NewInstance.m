@@ -53,10 +53,10 @@ __attribute__((visibility("hidden")))
 @implementation NewInstanceLoader
 + (void)load {
     if(@available(iOS 13.2, *)) {
-        [objc_getClass("UIWindow") swizzleInstanceMethod:@selector(application:shouldSaveSecureApplicationState:) withMethod:@selector(pm_return_false)];
+        [objc_getClass("UIWindow") swizzleInstanceMethod:@selector(application:shouldRestoreSecureApplicationState:) withMethod:@selector(pm_return_false)];
     }
     else {
-        [objc_getClass("UIWindow") swizzleInstanceMethod:@selector(application:shouldSaveApplicationState:) withMethod:@selector(pm_return_false)];
+        [objc_getClass("UIWindow") swizzleInstanceMethod:@selector(application:shouldRestoreApplicationState:) withMethod:@selector(pm_return_false)];
     }
 }
 @end
