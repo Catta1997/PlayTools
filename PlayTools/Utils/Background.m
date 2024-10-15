@@ -47,14 +47,13 @@ __attribute__((visibility("hidden")))
     }
 }
 
-- (int) pm_foregroundInactive {
-    return 1;
+- (UISceneActivationState) pm_return_background {
+    return UISceneActivationStateForegroundInactive;
 }
-
 @end
 
 @implementation BackgroundLoader
 + (void)load {
-    [objc_getClass("UIScene") swizzleInstanceMethod:@selector(activationState) withMethod:@selector(pm_foregroundInactive)];
+    [objc_getClass("UIScene") swizzleInstanceMethod:@selector(activationState) withMethod:@selector(pm_return_background)];
 }
 @end
