@@ -55,7 +55,6 @@ __attribute__((visibility("hidden")))
 
 @implementation BackgroundLoader
 + (void)load {
-    [objc_getClass("UIKit") swizzleInstanceMethod:@selector(activationState) withMethod:@selector(pm_foregroundInactive)];
     [objc_getClass("UIScene") swizzleInstanceMethod:@selector(activationState) withMethod:@selector(pm_foregroundInactive)];
 }
 @end
