@@ -48,7 +48,7 @@ __attribute__((visibility("hidden")))
 }
 
 - (UISceneActivationState) pm_return_background {
-    return UISceneActivationStateForegroundInactive;
+    return UISceneActivationStateUnattached;
 }
 @end
 
