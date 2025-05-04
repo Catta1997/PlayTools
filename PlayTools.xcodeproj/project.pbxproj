@@ -1101,8 +1101,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/PlayCover/SwordRPC";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = revision;
+				revision = cd25ab54bf395aa4594507f42d4472d818a8a15a;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
