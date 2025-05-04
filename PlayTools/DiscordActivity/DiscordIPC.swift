@@ -22,7 +22,7 @@ class DiscordIPC {
                 ipc = SwordRPC(appId: custom.applicationID)
             }
 
-            Task(priority: .background) {
+            Task.init(priority: .background) {
                 let activity = await createActivity(from: custom)
                 ipc.connect()
                 ipc.setPresence(activity)
