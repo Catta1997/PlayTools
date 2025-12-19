@@ -13,6 +13,8 @@
 #import "PTFakeMetaTouch.h"
 #import <VideoSubscriberAccount/VideoSubscriberAccount.h>
 #import <AVFoundation/AVFoundation.h>
+#import <CoreMotion/CoreMotion.h>
+#import <GameController/GameController.h>
 
 __attribute__((visibility("hidden")))
 @interface PTSwizzleLoader : NSObject
@@ -59,6 +61,30 @@ __attribute__((visibility("hidden")))
     Method swizzledMethod = class_getInstanceMethod(cls, newSelector);
     
     method_exchangeImplementations(originalMethod, swizzledMethod);
+}
+
++ (void) swizzleClassMethod:(SEL)origSelector withMethod:(SEL)newSelector {
+    Class cls = object_getClass((id)self);
+    Method originalMethod = class_getClassMethod(cls, origSelector);
+    Method swizzledMethod = class_getClassMethod(cls, newSelector);
+
+    if (class_addMethod(cls,
+                        origSelector,
+                        method_getImplementation(swizzledMethod),
+                        method_getTypeEncoding(swizzledMethod))) {
+        class_replaceMethod(cls,
+                            newSelector,
+                            method_getImplementation(originalMethod),
+                            method_getTypeEncoding(originalMethod));
+    } else {
+        class_replaceMethod(cls,
+                            newSelector,
+                            class_replaceMethod(cls,
+                                                origSelector,
+                                                method_getImplementation(swizzledMethod),
+                                                method_getTypeEncoding(swizzledMethod)),
+                            method_getTypeEncoding(originalMethod));
+    }
 }
 
 - (BOOL) hook_prefersPointerLocked {
@@ -123,6 +149,14 @@ __attribute__((visibility("hidden")))
     
 }
 
+- (CGRect) hook_boundsResizable {
+    return [PlayScreen boundsResizable:[self hook_boundsResizable]];
+}
+
+- (BOOL) hook_requiresFullScreen {
+    return NO;
+}
+
 - (void) hook_setCurrentSubscription:(VSSubscription *)currentSubscription {
     // do nothing
 }
@@ -148,6 +182,23 @@ __attribute__((visibility("hidden")))
     } else {
         [self hook_requestRecordPermission:response];
     }
+}
+
+- (instancetype)hook_CMMotionManager_init {
+    CMMotionManager *motionManager = (CMMotionManager *)[self hook_CMMotionManager_init];
+    // The default update interval is 0, which may lead to excessive CPU usage
+    motionManager.accelerometerUpdateInterval = 0.01;
+    motionManager.deviceMotionUpdateInterval = 0.01;
+    motionManager.gyroUpdateInterval = 0.01;
+    return motionManager;
+}
+
++ (GCMouse *)hook_GCMouse_current {
+    return nil;
+}
+
++ (NSArray *)hook_GCMouse_mice {
+    return @[];
 }
 
 // Hook for UIUserInterfaceIdiom
@@ -197,7 +248,13 @@ bool menuWasCreated = false;
 + (void)load {
     // This might need refactor soon
     if(@available(iOS 16.3, *)) {
-        if ([[PlaySettings shared] adaptiveDisplay]) {
+        if ([[PlaySettings shared] resizableWindow]) {
+            [objc_getClass("_UIApplicationInfoParser") swizzleInstanceMethod:NSSelectorFromString(@"requiresFullScreen") withMethod:@selector(hook_requiresFullScreen)];
+            [objc_getClass("UIScreen") swizzleInstanceMethod:@selector(bounds) withMethod:@selector(hook_boundsResizable)];
+            [objc_getClass("UIScreen") swizzleInstanceMethod:@selector(nativeScale) withMethod:@selector(hook_nativeScale)];
+            [objc_getClass("UIScreen") swizzleInstanceMethod:@selector(scale) withMethod:@selector(hook_scale)];
+        }
+        else if ([[PlaySettings shared] adaptiveDisplay]) {
             // This is an experimental fix
             if ([[PlaySettings shared] inverseScreenValues]) {
                 // This lines set External Scene settings and other IOS10 Runtime services by swizzling
@@ -286,6 +343,15 @@ bool menuWasCreated = false;
 
     if ([[PlaySettings shared] checkMicPermissionSync]) {
         [objc_getClass("AVAudioSession") swizzleInstanceMethod:@selector(requestRecordPermission:) withMethod:@selector(hook_requestRecordPermission:)];
+    }
+
+    if ([[PlaySettings shared] limitMotionUpdateFrequency]) {
+        [objc_getClass("CMMotionManager") swizzleInstanceMethod:@selector(init) withMethod:@selector(hook_CMMotionManager_init)];
+    }
+
+    if (([[PlaySettings shared] disableBuiltinMouse])) {
+        [objc_getClass("GCMouse") swizzleClassMethod:@selector(current) withMethod:@selector(hook_GCMouse_current)];
+        [objc_getClass("GCMouse") swizzleClassMethod:@selector(mice) withMethod:@selector(hook_GCMouse_mice)];
     }
 }
 

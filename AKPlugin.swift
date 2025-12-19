@@ -12,26 +12,37 @@ import Foundation
 // Add a lightweight struct so we can decode only the flag we care about
 private struct AKAppSettingsData: Codable {
     var hideTitleBar: Bool?
+    var floatingWindow: Bool?
+    var resolution: Int?
+    var resizableAspectRatioWidth: Int?
+    var resizableAspectRatioHeight: Int?
 }
 
 class AKPlugin: NSObject, Plugin {
     required override init() {
         super.init()
-        if hideTitleBarSetting == false {
-                return
-        }
         if let window = NSApplication.shared.windows.first {
-            // Enable all window management features
-            window.styleMask.insert([.resizable, .fullSizeContentView])
+            window.styleMask.insert([.resizable])
             window.collectionBehavior = [.fullScreenPrimary, .managed, .participatesInCycle]
-
-            // Enable automatic window management
             window.isMovable = true
             window.isMovableByWindowBackground = true
-            window.titlebarAppearsTransparent = true
-            window.titleVisibility = .hidden
-            window.toolbar = nil
-            window.title = ""
+
+            if self.hideTitleBarSetting == true {
+                window.styleMask.insert([.fullSizeContentView])
+                window.titlebarAppearsTransparent = true
+                window.titleVisibility = .hidden
+                window.toolbar = nil
+                window.title = ""
+            }
+
+            if self.floatingWindowSetting == true {
+                window.level = .floating
+            }
+
+            if let aspectRatio = self.aspectRatioSetting {
+                window.contentAspectRatio = aspectRatio
+            }
+
             NSWindow.allowsAutomaticWindowTabbing = true
         }
 
@@ -40,12 +51,24 @@ class AKPlugin: NSObject, Plugin {
             forName: NSWindow.didBecomeKeyNotification,
             object: nil,
             queue: .main) { notif in
-            guard let win = notif.object as? NSWindow else { return }
-            win.styleMask.insert([.resizable, .fullSizeContentView])
-            win.titlebarAppearsTransparent = true
-            win.titleVisibility = .hidden
-            win.toolbar = nil
-            win.title = ""
+                guard let win = notif.object as? NSWindow else { return }
+                win.styleMask.insert([.resizable])
+
+                if self.hideTitleBarSetting == true {
+                    win.styleMask.insert([.fullSizeContentView])
+                    win.titlebarAppearsTransparent = true
+                    win.titleVisibility = .hidden
+                    win.toolbar = nil
+                    win.title = ""
+                }
+
+                if self.floatingWindowSetting == true {
+                    win.level = .floating
+                }
+
+                if let aspectRatio = self.aspectRatioSetting {
+                    win.contentAspectRatio = aspectRatio
+                }
         }
     }
 
@@ -265,17 +288,29 @@ class AKPlugin: NSObject, Plugin {
     }
 
     /// Convenience instance property that exposes the cached static preference.
-    private var hideTitleBarSetting: Bool { Self.hideTitleBarPreference }
+    private var hideTitleBarSetting: Bool { Self.akAppSettingsData?.hideTitleBar ?? false }
+    private var floatingWindowSetting: Bool { Self.akAppSettingsData?.floatingWindow ?? false }
+    private var aspectRatioSetting: NSSize? {
+        guard Self.akAppSettingsData?.resolution == 6 else {
+            return nil
+        }
+        let width = Self.akAppSettingsData?.resizableAspectRatioWidth ?? 0
+        let height = Self.akAppSettingsData?.resizableAspectRatioHeight ?? 0
+        guard width > 0 && height > 0 else {
+            return nil
+        }
+        return NSSize(width: width, height: height)
+    }
 
-    fileprivate static var hideTitleBarPreference: Bool = {
+    fileprivate static var akAppSettingsData: AKAppSettingsData? = {
         let bundleIdentifier = Bundle.main.bundleIdentifier ?? ""
         let settingsURL = URL(fileURLWithPath: "/Users/\(NSUserName())/Library/Containers/io.playcover.PlayCover")
             .appendingPathComponent("App Settings")
             .appendingPathComponent("\(bundleIdentifier).plist")
         guard let data = try? Data(contentsOf: settingsURL),
               let decoded = try? PropertyListDecoder().decode(AKAppSettingsData.self, from: data) else {
-            return false
+            return nil
         }
-        return decoded.hideTitleBar ?? false
+        return decoded
     }()
 }
